@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>ERSSmartBuddy Prototype</title>
+    <title>ERSSmartBuddy</title>
     <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
@@ -13,56 +13,41 @@
           <div class="brand-mark">ERS</div>
           <div>
             <h1>ERSSmartBuddy</h1>
-            <p>Prototype workspace</p>
+            <p>Employee workspace</p>
           </div>
         </div>
         <nav class="nav-list">
           <button class="nav-item active" type="button">Dashboard</button>
-          <button class="nav-item" type="button">Claims</button>
-          <button class="nav-item" type="button">Approvals</button>
-          <button class="nav-item" type="button">Policy</button>
-          <button class="nav-item" type="button">Support</button>
         </nav>
         <section class="profile-card">
-          <span class="eyebrow">Seeded user</span>
+          <span class="eyebrow">Employee</span>
           <strong>Narin Wong</strong>
           <span>Product Operations</span>
-          <span>Approver: Mali Chen</span>
         </section>
       </aside>
 
       <section class="workspace">
         <header class="topbar">
           <div>
-            <span class="eyebrow">Mock Expense Reimbursement System</span>
+            <span class="eyebrow">Expense Reimbursement System</span>
             <h2>Expense workspace</h2>
           </div>
           <div class="status-pill">
             <span class="dot"></span>
-            Prototype only
+            Active
           </div>
         </header>
 
-        <section class="summary-grid" aria-label="Claim summary">
+        <section class="summary-grid" aria-label="Expense assistant summary">
           <article class="metric-card">
             <span>Drafts</span>
             <strong id="draftCount">1</strong>
-            <small>Inside SmartBuddy only</small>
-          </article>
-          <article class="metric-card">
-            <span>Pending approval</span>
-            <strong>2</strong>
-            <small>Mock claim data</small>
-          </article>
-          <article class="metric-card">
-            <span>Policy answers</span>
-            <strong id="policyCount">0</strong>
-            <small>100% cited sample content</small>
+            <small>Ready for review</small>
           </article>
           <article class="metric-card">
             <span>Audit events</span>
             <strong id="auditCount">0</strong>
-            <small>Session preview</small>
+            <small>Audit trail</small>
           </article>
         </section>
 
@@ -78,7 +63,7 @@
 
             <div class="receipt-layout">
               <div class="receipt-stage">
-                <div class="receipt-visual" id="receiptVisual" aria-label="Sample receipt preview">
+                <div class="receipt-visual" id="receiptVisual" aria-label="Receipt preview">
                   <div class="receipt-paper">
                     <span class="store">Siam Bistro</span>
                     <span>Tax invoice / receipt</span>
@@ -91,12 +76,12 @@
                 <label class="upload-zone" for="receiptUpload">
                   <input id="receiptUpload" type="file" accept=".jpg,.jpeg,.png,.pdf" />
                   <span>Upload JPG, PNG, or text PDF</span>
-                  <small>Prototype parses sample metadata and falls back to manual entry.</small>
+                  <small>Receipt data is extracted for employee review.</small>
                 </label>
-                <div class="sample-row" role="group" aria-label="Sample receipts">
-                  <button type="button" class="sample-button active" data-sample="normal">Normal</button>
-                  <button type="button" class="sample-button" data-sample="low">Low confidence</button>
-                  <button type="button" class="sample-button" data-sample="warning">Amount warning</button>
+                <div class="receipt-choice-row" role="group" aria-label="Receipt options">
+                  <button type="button" class="receipt-choice-button active" data-preset="normal">Meal receipt</button>
+                  <button type="button" class="receipt-choice-button" data-preset="low">Low confidence</button>
+                  <button type="button" class="receipt-choice-button" data-preset="warning">Hotel receipt</button>
                 </div>
               </div>
 
@@ -150,7 +135,7 @@
           <article class="panel audit-panel">
             <div class="panel-heading">
               <div>
-                <span class="eyebrow">Audit preview</span>
+                <span class="eyebrow">Audit log</span>
                 <h3>AI-assisted activity</h3>
               </div>
             </div>
@@ -176,15 +161,12 @@
 
       <div class="quick-actions" role="group" aria-label="Guided actions">
         <button type="button" data-intent="receipt">Receipt draft</button>
-        <button type="button" data-intent="policy">Policy Q&amp;A</button>
-        <button type="button" data-intent="claim">Claim status</button>
-        <button type="button" data-intent="support">ERS issue</button>
       </div>
 
       <div class="chat-log" id="chatLog" aria-live="polite"></div>
 
       <form class="chat-input" id="chatForm">
-        <input id="chatText" autocomplete="off" placeholder="Ask in English or Thai..." />
+        <input id="chatText" autocomplete="off" placeholder="Ask about receipt drafting..." />
         <button type="submit" class="primary">Send</button>
       </form>
     </section>
