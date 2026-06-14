@@ -277,14 +277,12 @@ h3 {
   font-size: 13px;
 }
 
-.receipt-choice-row,
 .quick-actions {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
 }
 
-.receipt-choice-button,
 .quick-actions button,
 .secondary,
 .primary,
@@ -295,7 +293,6 @@ h3 {
   font-weight: 750;
 }
 
-.receipt-choice-button,
 .quick-actions button,
 .secondary,
 .copy-button {
@@ -303,7 +300,6 @@ h3 {
   color: #263644;
 }
 
-.receipt-choice-button.active,
 .quick-actions button:hover,
 .secondary:hover {
   background: #dbe8ee;
@@ -547,4 +543,45 @@ textarea {
     right: 14px;
     bottom: 14px;
   }
+}
+
+.receipt-image {
+  display: block;
+  width: 100%;
+  max-height: 360px;
+  object-fit: contain;
+  border-radius: 8px;
+}
+
+.json-output {
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #f8fafb;
+}
+
+.json-output-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.json-output pre {
+  min-height: 132px;
+  max-height: 240px;
+  margin: 0;
+  overflow: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: #263644;
+  font: 13px/1.45 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+.is-busy button,
+.is-busy input,
+.is-busy select {
+  cursor: wait;
 }

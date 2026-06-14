@@ -4,21 +4,31 @@ Employee expense assistant for receipt-to-draft workflows.
 
 ## Run
 
-Open `index.html` in a browser, or serve the folder locally:
+Set an OpenAI API key on the server environment, then start the app:
 
 ```bash
-python3 -m http.server 4173
+export OPENAI_API_KEY="your_api_key"
+node server.js
 ```
 
 Then visit `http://localhost:4173`.
 
-## Included Workflows
+## Receipt Extraction API
 
-- ERS workspace with embedded ERSSmartBuddy chat widget.
-- Receipt upload or saved receipt selection.
-- Receipt extraction with editable draft preview.
-- OCR confidence warning below 80%.
-- Amount edit warning above 10%.
-- Draft confirmation with employee review before submission.
-- Audit log for AI-assisted actions.
+`POST /api/receipt/extract`
 
+Input: multipart form data with a receipt image file (JPG or PNG) in the `receipt` field.
+
+Output:
+
+```json
+{
+  "merchantName": "string",
+  "recieptCategory": "string",
+  "totalAmt": 0,
+  "vatAmt": 0,
+  "score": 0
+}
+```
+
+The frontend previews the uploaded receipt image, calls this API, displays the returned JSON, and fills the editable expense draft fields for employee review.

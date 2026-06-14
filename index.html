@@ -56,7 +56,7 @@
             <div class="panel-heading">
               <div>
                 <span class="eyebrow">Receipt to draft</span>
-                <h3>Upload or choose a receipt</h3>
+                <h3>Upload a receipt</h3>
               </div>
               <span class="threshold">OCR threshold 80%</span>
             </div>
@@ -74,15 +74,10 @@
                   </div>
                 </div>
                 <label class="upload-zone" for="receiptUpload">
-                  <input id="receiptUpload" type="file" accept=".jpg,.jpeg,.png,.pdf" />
-                  <span>Upload JPG, PNG, or text PDF</span>
+                  <input id="receiptUpload" type="file" accept="image/png,image/jpeg,image/jpg" />
+                  <span>Upload JPG or PNG</span>
                   <small>Receipt data is extracted for employee review.</small>
                 </label>
-                <div class="receipt-choice-row" role="group" aria-label="Receipt options">
-                  <button type="button" class="receipt-choice-button active" data-preset="normal">Meal receipt</button>
-                  <button type="button" class="receipt-choice-button" data-preset="low">Low confidence</button>
-                  <button type="button" class="receipt-choice-button" data-preset="warning">Hotel receipt</button>
-                </div>
               </div>
 
               <form class="draft-form" id="draftForm">
@@ -124,6 +119,13 @@
                   <span id="confidenceBadge" class="badge">Confidence 92%</span>
                   <span id="amountWarning" class="warning-text" hidden>Amount changed by more than 10%. Finance review flag added.</span>
                 </div>
+                <section class="json-output" aria-label="Extracted JSON">
+                  <div class="json-output-heading">
+                    <span class="eyebrow">API output</span>
+                    <strong>Receipt JSON</strong>
+                  </div>
+                  <pre id="extractionJson">Upload a receipt image to extract JSON data.</pre>
+                </section>
                 <div class="button-row">
                   <button type="button" class="secondary" id="extractButton">Run extraction</button>
                   <button type="submit" class="primary">Confirm draft</button>
