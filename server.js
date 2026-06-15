@@ -4,6 +4,8 @@ const path = require("path");
 
 const PORT = Number(process.env.PORT || 4173);
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+const SGPT_HOST = process.env.SGPT_HOST;
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 const ROOT = __dirname;
 const MAX_UPLOAD_BYTES = 8 * 1024 * 1024;
 
@@ -89,18 +91,125 @@ function normalizeExtraction(raw) {
   };
 }
 
-async function extractReceiptWithOpenAI(file) {
-  if (!OPENAI_API_KEY) {
-    // throw Object.assign(new Error("OPENAI_API_KEY is not configured on the server."), { statusCode: 500 });
-    return normalizeExtraction({
-      merchantName: "ร้านอาหารอร่อย",
-      recieptCategory: "ค่าอาหาร",
-      totalAmt: 500.0,
-      vatAmt: 35.0,
-      score: 85,
-    });
+async function extractReceiptWithSgpt(file) {
+
+  const reqBody = {
+        "model": "claude-sonnet-4-6",
+        "temperature": 0.7,
+        "max_tokens": 5000,
+        // "output_config": {
+        //     "format": "json_schema",
+        //     "json_schema": {
+        //       "type": "object",
+        //       "additionalProperties": false,
+        //       "properties": {
+        //         "merchantName": { "type": "string", "description": "ชื่อร้านค้าบนใบเสร็จรับเงิน" },
+        //         "recieptCategory": { "type": "string", "description": "ประเภทค่าใช้จ่าย เช่น ค่าอาหาร ค่าเดินทาง หรือค่าที่พัก" },
+        //         "totalAmt": { "type": "number", "description": "ยอดเงินรวม VAT" },
+        //         "vatAmt": { "type": "number", "description": "ยอด VAT" },
+        //         "score": { "type": "number", "description": "ความมั่นใจ 0-100" },
+        //       },
+        //       "required": ["merchantName", "recieptCategory", "totalAmt", "vatAmt", "score"],
+        //     }
+        // },
+        "system": "You extract receipt information. Return only JSON matching the schema. Use Thai category labels when appropriate. If a value is not visible, use an empty string for text or 0 for numbers, and reduce score.",
+        "messages": [{
+          "role": "user",
+          "content": [
+              {
+                "type": "image",
+                "source": {
+                  "type": "base64",
+                  "media_type": file.mimeType,
+                  "data": file.data.toString("base64")
+                },
+              },
+              {
+                  "type": "text",
+                  "text": "อ่านรูปใบเสร็จรับเงินนี้ และส่ง JSON fields: merchantName, recieptCategory, totalAmt, vatAmt, score. score อยู่ในช่วง 0-100."
+              }
+          ]
+        }]
+  };
+
+  const response = await fetch(SGPT_HOST, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(reqBody)
+  });
+
+  const body = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    console.log("SGPT response error: ", body);
+    const message = body?.error?.message || "SGPT receipt extraction failed.";
+    throw Object.assign(new Error(message), { statusCode: response.status });
   }
 
+  const content = body?.content?.[0]?.text;
+  if (!content) {
+    throw Object.assign(new Error("SGPT response did not include extraction JSON."), { statusCode: 502 });
+  }
+  const jsonResult = content.substring(content.indexOf("{"), content.lastIndexOf("}") + 1);
+
+  return normalizeExtraction(JSON.parse(jsonResult));
+}
+
+async function extractReceiptWithGemini(file) {
+  if (!file.mimeType.startsWith("image/")) {
+    throw Object.assign(new Error("Please upload a receipt image file such as JPG or PNG."), { statusCode: 415 });
+  }
+
+  const response = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        systemInstruction: {
+          parts: [{ text: "You extract receipt information. Return only JSON matching the schema. Use Thai category labels when appropriate. If a value is not visible, use an empty string for text or 0 for numbers, and reduce score." }],
+        },
+        contents: [{
+          role: "user",
+          parts: [
+            { inlineData: { mimeType: file.mimeType, data: file.data.toString("base64") } },
+            { text: "อ่านรูปใบเสร็จรับเงินนี้ และส่ง JSON fields: merchantName, recieptCategory, totalAmt, vatAmt, score. score อยู่ในช่วง 0-100." },
+          ],
+        }],
+        generationConfig: {
+          responseMimeType: "application/json",
+          responseSchema: {
+            type: "object",
+            properties: {
+              merchantName: { type: "string", description: "ชื่อร้านค้าบนใบเสร็จรับเงิน" },
+              recieptCategory: { type: "string", description: "ประเภทค่าใช้จ่าย เช่น ค่าอาหาร ค่าเดินทาง หรือค่าที่พัก" },
+              totalAmt: { type: "number", description: "ยอดเงินรวม VAT" },
+              vatAmt: { type: "number", description: "ยอด VAT" },
+              score: { type: "number", description: "ความมั่นใจ 0-100" },
+            },
+            required: ["merchantName", "recieptCategory", "totalAmt", "vatAmt", "score"],
+          },
+        },
+      }),
+    }
+  );
+
+  const body = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    const message = body?.error?.message || "Gemini receipt extraction failed.";
+    throw Object.assign(new Error(message), { statusCode: response.status });
+  }
+
+  const content = body?.candidates?.[0]?.content?.parts?.[0]?.text;
+  if (!content) {
+    throw Object.assign(new Error("Gemini response did not include extraction JSON."), { statusCode: 502 });
+  }
+
+  return normalizeExtraction(JSON.parse(content));
+}
+
+async function extractReceiptWithOpenAI(file) {
   if (!file.mimeType.startsWith("image/")) {
     throw Object.assign(new Error("Please upload a receipt image file such as JPG or PNG."), { statusCode: 415 });
   }
@@ -169,6 +278,35 @@ async function extractReceiptWithOpenAI(file) {
   return normalizeExtraction(JSON.parse(content));
 }
 
+
+async function extractReceipt(file) {
+  if (!file.mimeType.startsWith("image/")) {
+    throw Object.assign(new Error("Please upload a receipt image file such as JPG or PNG."), { statusCode: 415 });
+  }
+
+  if(SGPT_HOST) {
+    return await extractReceiptWithSgpt(file);
+  }
+  if(GEMINI_API_KEY) {
+    return await extractReceiptWithGemini(file);
+  }
+  if(OPENAI_API_KEY){
+    return await extractReceiptWithOpenAI(file);
+  }
+  
+   if (!OPENAI_API_KEY && !SGPT_HOST) {
+    // throw Object.assign(new Error("OPENAI_API_KEY is not configured on the server."), { statusCode: 500 });
+    return normalizeExtraction({
+      merchantName: "ร้านอาหารอร่อย",
+      recieptCategory: "ค่าอาหาร",
+      totalAmt: 500.0,
+      vatAmt: 35.0,
+      score: 85,
+    });
+  }
+
+}
+
 async function handleReceiptExtract(req, res) {
   try {
     const contentType = req.headers["content-type"] || "";
@@ -177,7 +315,7 @@ async function handleReceiptExtract(req, res) {
     }
     const body = await getRequestBody(req);
     const file = parseMultipartFile(body, contentType);
-    const extraction = await extractReceiptWithOpenAI(file);
+    const extraction = await extractReceipt(file);
     sendJson(res, 200, extraction);
   } catch (error) {
     sendJson(res, error.statusCode || 500, { error: error.message || "Receipt extraction failed." });
