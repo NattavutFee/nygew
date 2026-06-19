@@ -320,7 +320,9 @@ async function chatWithBot(text) {
   };
 
   console.log("JSON.stringify(reqBody) - "+JSON.stringify(reqBody))
+  return {"content": "Under progress to integrate with AI-ChatBot"};
 
+  /*
   const response = await fetch(SGPT_HOST, {
     method: "POST",
     headers: {
@@ -341,6 +343,7 @@ async function chatWithBot(text) {
     throw Object.assign(new Error("SGPT response did not include extraction JSON."), { statusCode: 502 });
   }
   return {"content": content};
+  */
 }
 
 async function handleReceiptExtract(req, res) {
