@@ -307,6 +307,42 @@ async function extractReceipt(file) {
 
 }
 
+async function chatWithBot(text) {
+  const reqBody = {
+        "model": "claude-sonnet-4-6",
+        "temperature": 0.7,
+        "max_tokens": 5000,
+        "system": "Answer only extract E-Reciept process only",
+        "messages": [{
+          "content": "- "+text,
+          "role": "user"
+        }]
+  };
+
+  console.log("JSON.stringify(reqBody) - "+JSON.stringify(reqBody))
+
+  const response = await fetch(SGPT_HOST, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(reqBody)
+  });
+
+  const body = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    console.log("SGPT response error: ", body);
+    const message = body?.error?.message || "SGPT chat failed.";
+    throw Object.assign(new Error(message), { statusCode: response.status });
+  }
+
+  const content = body?.content?.[0]?.text;
+  if (!content) {
+    throw Object.assign(new Error("SGPT response did not include extraction JSON."), { statusCode: 502 });
+  }
+  return {"content": content};
+}
+
 async function handleReceiptExtract(req, res) {
   try {
     const contentType = req.headers["content-type"] || "";
@@ -316,6 +352,17 @@ async function handleReceiptExtract(req, res) {
     const body = await getRequestBody(req);
     const file = parseMultipartFile(body, contentType);
     const extraction = await extractReceipt(file);
+    sendJson(res, 200, extraction);
+  } catch (error) {
+    sendJson(res, error.statusCode || 500, { error: error.message || "Receipt extraction failed." });
+  }
+}
+
+async function handleChat(req, res) {
+  try {
+    const contentType = req.headers["content-type"] || "";
+    const body = await getRequestBody(req);
+    const extraction = await chatWithBot(body.text);
     sendJson(res, 200, extraction);
   } catch (error) {
     sendJson(res, error.statusCode || 500, { error: error.message || "Receipt extraction failed." });
@@ -347,6 +394,10 @@ function serveStatic(req, res) {
 const server = http.createServer((req, res) => {
   if (req.method === "POST" && req.url === "/api/receipt/extract") {
     handleReceiptExtract(req, res);
+    return;
+  }
+  if (req.method === "POST" && req.url === "/api/chat") {
+    handleChat(req, res);
     return;
   }
   if (req.method === "GET" || req.method === "HEAD") {

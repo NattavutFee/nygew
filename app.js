@@ -157,6 +157,20 @@ async function extractReceipt(file) {
   return payload;
 }
 
+async function chatWithBot(text) {
+  console.log(text);
+  const response = await fetch("/api/chat", {
+    method: "POST",
+    body: {"text": text},
+  });
+
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(payload.error || "Chat with bot failed.");
+  }
+  return payload;
+}
+
 async function handleReceiptFile(file) {
   if (!file) return;
   if (!file.type.startsWith("image/")) {
@@ -191,14 +205,25 @@ function handleIntent(intent) {
   }
 }
 
-function respondToReceiptChat(text) {
+
+async function respondToReceiptChat(text) {
   const normalized = text.toLowerCase();
   if (normalized.includes("extract") || normalized.includes("upload") || normalized.includes("receipt") || text.includes("ใบเสร็จ")) {
     assistant("Upload a receipt image with Choose File. The extraction API will return JSON and populate the editable draft fields.");
     return;
   }
-  assistant("ERSSmartBuddy is focused on receipt draft assistance. Upload a receipt image to extract and review draft expense data.");
+
+  try {
+    const data = await chatWithBot(text);
+    assistant( data.content );
+  } catch (error) {
+    extractionJson.textContent = JSON.stringify({ error: error.message }, null, 2);
+    assistant(`<strong>Chat with bot failed</strong><br />${escapeHtml(error.message)}`);
+  } finally {
+    setBusy(false);
+  }
 }
+
 
 receiptUpload.addEventListener("change", (event) => {
   const file = event.target.files?.[0];
